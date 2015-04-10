@@ -16,14 +16,18 @@ namespace SavannahState
     [System.Web.Script.Services.ScriptService]
     public class NewsService : System.Web.Services.WebService
     {
+        private const Int32 _maxArticles = 50;
         public NewsService()
-        {
-        }
+        {}
 
         [WebMethod(CacheDuration = 900)]//15 minutes
         [ScriptMethod(UseHttpGet = true)]
-        public List<Article> GetAllArticles(Boolean onlyActive)
+        public List<Article> GetAllArticles(Boolean onlyActive, Int32 numberOfArticles)
         {
+            if(numberOfArticles==0){
+                numberOfArticles = _maxArticles;
+            }
+
             List<Article> allArticles = new List<Article>();
             List<Article> articles = new List<Article>();
             List<Article> blogPosts = new List<Article>();
@@ -31,11 +35,13 @@ namespace SavannahState
             IStoryRepository newsRepo = new NewsRepository();
             IStoryRepository blogRepo = new BloggerRepository(System.Configuration.ConfigurationManager.AppSettings["blogger_access_token"]);
 
-            articles = newsRepo.GetArticles(onlyActive);
-            blogPosts = blogRepo.GetArticles(onlyActive);
+            articles = newsRepo.GetArticles(onlyActive, numberOfArticles);
+            blogPosts = blogRepo.GetArticles(onlyActive, numberOfArticles);
 
-            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).ToList();
+            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).Take(numberOfArticles).ToList();
 
+            Context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+            Context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
             return allArticles;
         }
 
@@ -55,13 +61,19 @@ namespace SavannahState
                 article = newsRepo.GetArticleById(id);
             }
 
+            Context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+            Context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
             return article;
         }
 
         [WebMethod(CacheDuration = 900)]//15 minutes
         [ScriptMethod(UseHttpGet = true)]
-        public List<Article> Search(String keyword, Boolean onlyActive)
+        public List<Article> Search(String keyword, Boolean onlyActive, Int32 numberOfArticles)
         {
+            if (numberOfArticles == 0)
+            {
+                numberOfArticles = _maxArticles;
+            }
             List<Article> allArticles = new List<Article>();
             List<Article> articles = new List<Article>();
             List<Article> blogPosts = new List<Article>();
@@ -69,18 +81,24 @@ namespace SavannahState
             IStoryRepository newsRepo = new NewsRepository();
             IStoryRepository blogRepo = new BloggerRepository(System.Configuration.ConfigurationManager.AppSettings["blogger_access_token"]);
 
-            articles = newsRepo.Search(keyword, onlyActive);
-            blogPosts = blogRepo.Search(keyword, onlyActive);
+            articles = newsRepo.Search(keyword, onlyActive, numberOfArticles);
+            blogPosts = blogRepo.Search(keyword, onlyActive, numberOfArticles);
 
-            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).ToList();
+            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).Take(numberOfArticles).ToList();
 
+            Context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+            Context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
             return allArticles;
         }
 
         [WebMethod(CacheDuration = 900)]//15 minutes
         [ScriptMethod(UseHttpGet = true)]
-        public List<Article> SearchByType(String type, Boolean onlyActive)
+        public List<Article> SearchByType(String type, Boolean onlyActive, Int32 numberOfArticles)
         {
+            if (numberOfArticles == 0)
+            {
+                numberOfArticles = _maxArticles;
+            }
             List<Article> allArticles = new List<Article>();
             List<Article> articles = new List<Article>();
             List<Article> blogPosts = new List<Article>();
@@ -88,11 +106,13 @@ namespace SavannahState
             IStoryRepository newsRepo = new NewsRepository();
             IStoryRepository blogRepo = new BloggerRepository(System.Configuration.ConfigurationManager.AppSettings["blogger_access_token"]);
 
-            articles = newsRepo.SearchByType(type, onlyActive);
-            blogPosts = blogRepo.SearchByType(type, onlyActive);
+            articles = newsRepo.SearchByType(type, onlyActive, numberOfArticles);
+            blogPosts = blogRepo.SearchByType(type, onlyActive, numberOfArticles);
 
-            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).ToList();
+            allArticles = articles.Concat(blogPosts).OrderByDescending(a => a.DatePublished).Take(numberOfArticles).ToList();
 
+            Context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+            Context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
             return allArticles;
         }
     }

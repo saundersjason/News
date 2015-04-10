@@ -12,6 +12,9 @@ namespace SavannahState.News
     {
         private String _bloggerKey;
         private const String _queryURL = "https://www.googleapis.com/blogger/v3/blogs/5797214299173121016/";
+        private const String _queryParameters = "fields=items(id,published,title,labels)";
+        private const String _queryParametersAll = "fields=items(id,published,title,content,labels)";
+
         private String _feedURL = "";
         List<Article> _allArticles;
         public BloggerRepository(String key) {
@@ -19,10 +22,15 @@ namespace SavannahState.News
             _allArticles = new List<Article>();
         }
 
-        public List<Article> GetArticles(Boolean onlyActive)
+        public List<Article> GetArticles( Boolean onlyActive,Int32 numberOfArticles=0)
         {
-            ProcessFeed(GetFeed(_queryURL + "posts?key=" + _bloggerKey));
-            return _allArticles;
+            ProcessFeed(GetFeed(_queryURL + "posts?key=" + _bloggerKey + "&" + _queryParameters));
+            if (numberOfArticles > 0)
+            {
+                return _allArticles.Take(numberOfArticles).ToList();
+            } else {
+                return _allArticles;
+            }
         }
 
         public Article GetArticleById(String Id) {
@@ -35,24 +43,39 @@ namespace SavannahState.News
                 return new Article();
             }
         }
-        
-        public List<Article> Search(string keyword, Boolean onlyActive)
+
+        public List<Article> Search(string keyword, Boolean onlyActive, Int32 numberOfArticles=0)
         {
             //URL Encode keyword
-            ProcessFeed(GetFeed(_queryURL + "posts/search?q=" + keyword + "&key=" + _bloggerKey));
-            return _allArticles;
+            ProcessFeed(GetFeed(_queryURL + "posts/search?q=" + keyword + "&key=" + _bloggerKey + "&" + _queryParameters));
+            if (numberOfArticles > 0)
+            {
+                return _allArticles.Take(numberOfArticles).ToList();
+            }
+            else
+            {
+                return _allArticles;
+            }
         }
 
-        public List<Article> SearchByType(string typeName, bool onlyActive)
+        public List<Article> SearchByType(string typeName, bool onlyActive, Int32 numberOfArticles=0)
         {
             //URL Encode keyword            
-            ProcessFeed(GetFeed(_queryURL + "posts/search?q=label:" + typeName + "&key=" + _bloggerKey));
-            return _allArticles;
+            ProcessFeed(GetFeed(_queryURL + "posts/search?q=label:" + typeName + "&key=" + _bloggerKey + "&" + _queryParameters));
+            if (numberOfArticles > 0)
+            {
+                return _allArticles.Take(numberOfArticles).ToList();
+            }
+            else
+            {
+                return _allArticles;
+            }
         }
 
         private String GetFeed(String feedUrl){
             String feed = "";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(feedUrl);
+            
             try
             {
                 WebResponse response = request.GetResponse();
@@ -125,6 +148,30 @@ namespace SavannahState.News
                     }
                 }
             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //To DO - nextToken is returnig the same value on mutilep request. Do search for SSU
+
+
 
             if (!String.IsNullOrEmpty(nextToken) && !String.IsNullOrEmpty(_feedURL))
             {

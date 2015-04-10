@@ -9,19 +9,22 @@ namespace SavannahState.News
     public class NewsRepository:IStoryRepository
     {
         private List<NewsType> _newsTypes;
+        private Boolean _getBodyContent = false;
 
         public NewsRepository(){
             _newsTypes = GetNewsTypes();
         }
 
-        public List<Article> GetArticles(Boolean onlyActive) 
+        public List<Article> GetArticles( Boolean onlyActive,Int32 numberOfArticles=0) 
         {
+            _getBodyContent = true;
             List<Article> articles = new List<Article>();
-            articles = Search("", onlyActive);
+            articles = Search("", onlyActive, numberOfArticles);
             return articles;
         }
 
         public Article GetArticleById(String Id) {
+            _getBodyContent = true;
             Article article = new Article();
             String sql = "SELECT TOP 1 ID, TYPE_ID, TIME_START, TIME_END, HEADLINE, BODY, LINK, IMAGE_NAME, OTHER_CATEGORY FROM NEWS WHERE ID = @Id";
             SqlConnection conn = new DBConnection().GetConnection("");
@@ -43,9 +46,15 @@ namespace SavannahState.News
                     {
                         article.DatePublished = (DateTime)reader["TIME_START"];
                     }
+                    article.Disabled = false;
                     if (!String.IsNullOrEmpty(reader["TIME_END"].ToString()))
                     {
                         article.DateDisabled = (DateTime)reader["TIME_END"];
+
+                        if (article.DateDisabled <= DateTime.Now)
+                        {
+                            article.Disabled = true;
+                        }
                     }
                     if (!String.IsNullOrEmpty(reader["HEADLINE"].ToString()))
                     {
@@ -69,7 +78,11 @@ namespace SavannahState.News
                     }
                     if (!String.IsNullOrEmpty(reader["TYPE_ID"].ToString()))
                     {
-                        otherCategories += "~" + reader["TYPE_ID"].ToString();
+                        String tempTypeId = reader["TYPE_ID"].ToString();
+                        if (otherCategories.IndexOf(tempTypeId)<0)
+                        {
+                            otherCategories += "~" + tempTypeId;
+                        }
                     }
                     if (!String.IsNullOrEmpty(otherCategories))
                     {
@@ -85,11 +98,22 @@ namespace SavannahState.News
             return article;
         }
 
-        public List<Article> Search(String keyword, Boolean onlyActive)
+        public List<Article> Search(String keyword, Boolean onlyActive, Int32 numberOfArticles=0)
         {
             List<Article> articles = new List<Article>();
             StringBuilder sql = new StringBuilder();
-            sql.Append("SELECT ID, TYPE_ID, TIME_START, TIME_END, HEADLINE, BODY, LINK, IMAGE_NAME, OTHER_CATEGORY FROM NEWS");
+            sql.Append("SELECT");
+            if (numberOfArticles > 0)
+            {
+                sql.Append(" TOP " + numberOfArticles);
+            }
+
+            sql.Append(" ID, TYPE_ID, TIME_START, TIME_END, HEADLINE,");
+            
+            if(_getBodyContent){
+                sql.Append(" BODY,");
+            }
+            sql.Append(" LINK, IMAGE_NAME, OTHER_CATEGORY FROM NEWS");
             if (onlyActive) {
                 sql.Append(" WHERE (TIME_START IS Null OR TIME_START <= '" + DateTime.Now + "') AND (TIME_END IS Null OR TIME_END >= '" + DateTime.Now + "')");
             }
@@ -103,7 +127,7 @@ namespace SavannahState.News
                 else {
                     sql.Append(" WHERE");
                 }
-                sql.Append(" HEADLINE LIKE @keyword");
+                sql.Append(" (HEADLINE LIKE @keyword OR BODY LIKE @keyword)");
             }
 
             sql.Append(" ORDER BY TIME_START DESC");
@@ -131,17 +155,25 @@ namespace SavannahState.News
                     {
                         article.DatePublished = (DateTime)reader["TIME_START"];
                     }
+                    article.Disabled = false;
                     if (!String.IsNullOrEmpty(reader["TIME_END"].ToString()))
                     {
                         article.DateDisabled = (DateTime)reader["TIME_END"];
+
+                        if (article.DateDisabled <= DateTime.Now) {
+                            article.Disabled = true;
+                        }
                     }
                     if (!String.IsNullOrEmpty(reader["HEADLINE"].ToString()))
                     {
                         article.Title = (String)reader["HEADLINE"];
                     }
-                    if (!String.IsNullOrEmpty(reader["BODY"].ToString()))
+                    if (_getBodyContent)
                     {
-                        article.Body = (String)reader["BODY"];
+                        if (!String.IsNullOrEmpty(reader["BODY"].ToString()))
+                        {
+                            article.Body = (String)reader["BODY"];
+                        }
                     }
                     if (!String.IsNullOrEmpty(reader["LINK"].ToString()))
                     {
@@ -173,12 +205,17 @@ namespace SavannahState.News
             return articles;
         }
 
-        public List<Article> SearchByType(String typeName, Boolean onlyActive)
+        public List<Article> SearchByType(String typeName,  Boolean onlyActive, Int32 numberOfArticles=0)
         {
             Int16 typeId = GetNewsTypeIdByName(typeName);
             List<Article> articles = new List<Article>();
             StringBuilder sql = new StringBuilder();
-            sql.Append("SELECT ID, TYPE_ID, TIME_START, TIME_END, HEADLINE, BODY, LINK, IMAGE_NAME, OTHER_CATEGORY FROM NEWS");
+            sql.Append("SELECT");
+            if (numberOfArticles > 0)
+            {
+                sql.Append(" TOP " + numberOfArticles);
+            }
+            sql.Append(" ID, TYPE_ID, TIME_START, TIME_END, HEADLINE, BODY, LINK, IMAGE_NAME, OTHER_CATEGORY FROM NEWS");
             if (onlyActive)
             {
                 sql.Append(" WHERE (TIME_START IS Null OR TIME_START <= '" + DateTime.Now + "') AND (TIME_END IS Null OR TIME_END >= '" + DateTime.Now + "')");
@@ -219,9 +256,15 @@ namespace SavannahState.News
                     {
                         article.DatePublished = (DateTime)reader["TIME_START"];
                     }
+                    article.Disabled = false;
                     if (!String.IsNullOrEmpty(reader["TIME_END"].ToString()))
                     {
                         article.DateDisabled = (DateTime)reader["TIME_END"];
+
+                        if (article.DateDisabled <= DateTime.Now)
+                        {
+                            article.Disabled = true;
+                        }
                     }
                     if (!String.IsNullOrEmpty(reader["HEADLINE"].ToString()))
                     {
@@ -303,7 +346,7 @@ namespace SavannahState.News
                     }
                     if (!String.IsNullOrEmpty(reader["NAME"].ToString()))
                     {
-                        newsType.Name = reader["NAME"].ToString().ToLower();
+                        newsType.Name = reader["NAME"].ToString().ToLower().Replace("_"," ");
                     }
                     if (newsType.Id != null && !String.IsNullOrEmpty(newsType.Name)) 
                     {
