@@ -13,8 +13,7 @@ namespace SavannahState.News
         {
             try
             {
-                //dataConn = new SqlConnection(connStringName);
-                dataConn = new SqlConnection("Data Source=CSIT-SVR-SQL01;Initial Catalog=SSU_NEWS;User Id=dbapps;Password=movrdom2;");
+                dataConn = new SqlConnection("Your SQL Connection String Goes Here");
             }
             catch
             {
