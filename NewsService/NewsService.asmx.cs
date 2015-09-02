@@ -20,7 +20,7 @@ namespace SavannahState
         public NewsService()
         {}
 
-        [WebMethod(CacheDuration = 900)]//15 minutes
+        [WebMethod(CacheDuration = 1800)]//30 minutes
         [ScriptMethod(UseHttpGet = true)]
         public List<Article> GetAllArticles(Boolean onlyActive, Int32 numberOfArticles)
         {
@@ -70,6 +70,8 @@ namespace SavannahState
         [ScriptMethod(UseHttpGet = true)]
         public List<Article> Search(String keyword, Boolean onlyActive, Int32 numberOfArticles)
         {
+            keyword = HttpUtility.UrlDecode(keyword);
+
             if (numberOfArticles == 0)
             {
                 numberOfArticles = _maxArticles;
